@@ -20,7 +20,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.atlassian.bitbucket.auth.AuthenticationContext;
-import com.atlassian.bitbucket.i18n.I18nService;
 import com.atlassian.bitbucket.project.Project;
 import com.atlassian.bitbucket.pull.PullRequest;
 import com.atlassian.bitbucket.pull.PullRequestParticipant;
@@ -36,7 +35,8 @@ import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 import com.kylenicholls.stash.parameterizedbuilds.item.JenkinsResponse;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.MultivaluedHashMap;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,14 +77,13 @@ public class BuildResourceTest {
 
     @Before
     public void setup() throws Exception {
-        I18nService i18nService = mock(I18nService.class);
         settingsService = mock(SettingsService.class);
         jenkins = mock(Jenkins.class);
         authContext = mock(AuthenticationContext.class);
         propertiesService = mock(ApplicationPropertiesService.class);
         prService = mock(PullRequestService.class);
         permissionsCheck = mock(BuildPermissionsCondition.class);
-        rest = new BuildResource(i18nService, settingsService, jenkins, propertiesService,
+        rest = new BuildResource(settingsService, jenkins, propertiesService,
                 prService, authContext, permissionsCheck);
 
         repository = mock(Repository.class);
@@ -146,7 +145,7 @@ public class BuildResourceTest {
         JenkinsResponse message = new JenkinsResponse.JenkinsMessage().error(false).build();
         Job job = new Job.JobBuilder(0).jobName("job").build();
         jobs.add(job);
-        MultivaluedMap<String, String> query = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> query = new MultivaluedHashMap<>();
         query.add("param1", "value1");
         query.add("param2", "value2");
         when(uriInfo.getQueryParameters()).thenReturn(query);

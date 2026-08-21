@@ -24,7 +24,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.atlassian.bitbucket.auth.AuthenticationContext;
-import com.atlassian.bitbucket.i18n.I18nService;
 import com.atlassian.bitbucket.user.ApplicationUser;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.JenkinsConnection;
@@ -58,10 +57,9 @@ public class ProjectResourceTest {
                 "projecttoken", false, false);
         projectServers = Lists.newArrayList(projectServer);
         projectKey = "TEST";
-        I18nService i18nService = mock(I18nService.class);
         jenkins = mock(Jenkins.class);
         authContext = mock(AuthenticationContext.class);
-        rest = new ProjectResource(i18nService, jenkins, authContext);
+        rest = new ProjectResource(jenkins, authContext);
         ui = mock(UriInfo.class);
         testToken = new ServerService.Token();
         testToken.setToken(TOKEN_VALUE);

@@ -21,10 +21,9 @@ import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PROpenedHandler;
 import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PRReopenedHandler;
 import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PRSourceRescopedHandler;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
-import com.atlassian.bitbucket.branch.automerge.AutomaticMergeEvent;
+import com.atlassian.bitbucket.branch.cascadingmerge.CascadingMergeEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestDeclinedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestDeletedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestMergedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestOpenedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestParticipantApprovedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestReopenedEvent;
@@ -78,15 +77,17 @@ public class PullRequestHook {
     }
 
     @EventListener
-    public void onPullRequestMerged(PullRequestMergedEvent event) throws IOException {
-        runHandler(new PRMergedHandler(settingsService, pullRequestService, jenkins, event, url));
-    }
-
-    @EventListener
-    public void onPullRequestAutomaticMerged(AutomaticMergeEvent event) throws IOException {
+    public void onPullRequestCascadingMerged(CascadingMergeEvent event)
+            throws IOException {
         Iterable<Branch> branches = event.getMergePath();
-        for (Branch branch : branches){
-            runHandler(new PRAutoMergedHandler(settingsService, jenkins, event, url, branch));
+
+        for (Branch branch : branches) {
+            runHandler(new PRAutoMergedHandler(
+                    settingsService,
+                    jenkins,
+                    event,
+                    url,
+                    branch));
         }
     }
 

@@ -18,28 +18,22 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import com.atlassian.bitbucket.auth.AuthenticationContext;
-import com.atlassian.bitbucket.i18n.I18nService;
-import com.atlassian.bitbucket.rest.RestResource;
-import com.atlassian.bitbucket.rest.util.RestUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.JenkinsConnection;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
-import com.sun.jersey.spi.resource.Singleton;
 
 
 @Path("/global")
-@Singleton
-public class GlobalResource extends RestResource implements ServerService{
+public class GlobalResource implements ServerService{
 
     private Jenkins jenkins;
     private final AuthenticationContext authContext;
 
-    public GlobalResource(I18nService i18nService, Jenkins jenkins,
+    public GlobalResource(Jenkins jenkins,
             AuthenticationContext authContext) {
-        super(i18nService);
         this.jenkins = jenkins;
         this.authContext = authContext;
     }
@@ -48,7 +42,7 @@ public class GlobalResource extends RestResource implements ServerService{
     @GET
     @Path("/servers")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response getServers(@Context UriInfo ui){
         if (authContext.isAuthenticated()) {
             List<Map<String, Object>> servers = jenkins.getJenkinsServers(null).stream()
@@ -64,7 +58,7 @@ public class GlobalResource extends RestResource implements ServerService{
     @POST
     @Path("/servers/validate")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response validate(@Context UriInfo ui, Server server){
         if (authContext.isAuthenticated()) {
             Server oldServer = jenkins.getJenkinsServer(null, server.getAlias());
@@ -86,7 +80,7 @@ public class GlobalResource extends RestResource implements ServerService{
     @PUT
     @Path("/servers/{serverAlias}")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response addServer(@Context UriInfo ui, Server server, 
                               @PathParam("id") String serverAlias){
         if (authContext.isAuthenticated()){
@@ -125,7 +119,7 @@ public class GlobalResource extends RestResource implements ServerService{
     @PUT
     @Path("/servers/{serverAlias}/userToken")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response addUserToken(@Context UriInfo ui, ServerService.Token token){
         if (authContext.isAuthenticated()) {
             String user = authContext.getCurrentUser().getSlug();

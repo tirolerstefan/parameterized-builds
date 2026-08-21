@@ -10,7 +10,6 @@ import com.atlassian.bitbucket.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 
@@ -19,7 +18,6 @@ public class BuildPermissionsCondition extends BaseCondition{
     private final PermissionService permissionService;
     private final AuthenticationContext authContext;
 
-    @Autowired
     public BuildPermissionsCondition(@ComponentImport RepositoryService repositoryService,
                                      @ComponentImport PermissionService permissionService,
                                      SettingsService service, AuthenticationContext authContext) {

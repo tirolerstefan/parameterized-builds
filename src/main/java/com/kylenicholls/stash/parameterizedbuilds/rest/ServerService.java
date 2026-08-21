@@ -19,7 +19,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.atlassian.bitbucket.rest.util.RestUtils;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -43,19 +42,19 @@ public interface ServerService {
     @GET
     @Path("/servers")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response getServers(@Context UriInfo ui);
 
     @POST
     @Path("/servers/validate")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response validate(@Context UriInfo ui, Server server);
 
     @PUT
     @Path("/servers/{serverAlias}")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response addServer(@Context UriInfo ui, Server server, 
                               @PathParam("id") String serverAlias);
 
@@ -66,7 +65,7 @@ public interface ServerService {
     @PUT
     @Path("/servers/{serverAlias}/userToken")
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ RestUtils.APPLICATION_JSON_UTF8 })
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response addUserToken(@Context UriInfo ui, Token token);
 
     @DELETE

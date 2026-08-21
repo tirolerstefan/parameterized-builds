@@ -23,17 +23,12 @@ import javax.ws.rs.core.UriInfo;
 
 import com.atlassian.bitbucket.auth.AuthenticationContext;
 import com.atlassian.bitbucket.hook.repository.RepositoryHook;
-import com.atlassian.bitbucket.i18n.I18nService;
 import com.atlassian.bitbucket.pull.PullRequest;
 import com.atlassian.bitbucket.pull.PullRequestService;
 import com.atlassian.bitbucket.repository.Repository;
-import com.atlassian.bitbucket.rest.RestResource;
-import com.atlassian.bitbucket.rest.util.ResourcePatterns;
-import com.atlassian.bitbucket.rest.util.RestUtils;
 import com.atlassian.bitbucket.server.ApplicationPropertiesService;
 import com.atlassian.bitbucket.setting.Settings;
 import com.atlassian.bitbucket.user.ApplicationUser;
-import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.JenkinsConnection;
 import com.kylenicholls.stash.parameterizedbuilds.conditions.BuildPermissionsCondition;
@@ -43,17 +38,12 @@ import com.kylenicholls.stash.parameterizedbuilds.item.BitbucketVariables.Builde
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job.Trigger;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
-import com.sun.jersey.spi.resource.Singleton;
 
-import org.apache.commons.compress.utils.Lists;
-
-@Path(ResourcePatterns.REPOSITORY_URI)
+@Path("/projects/{projectKey}/repos/{repositorySlug}")
 @Consumes({ MediaType.APPLICATION_JSON })
-@Produces({ RestUtils.APPLICATION_JSON_UTF8 })
-@Singleton
+@Produces({ MediaType.APPLICATION_JSON })
 @Deprecated
-@AnonymousAllowed
-public class BuildResource extends RestResource {
+public class BuildResource {
     private SettingsService settingsService;
     private Jenkins jenkins;
     private final ApplicationPropertiesService applicationPropertiesService;
@@ -61,11 +51,10 @@ public class BuildResource extends RestResource {
     private final AuthenticationContext authContext;
     private final BuildPermissionsCondition permissionsCheck;
 
-    public BuildResource(I18nService i18nService, SettingsService settingsService, Jenkins jenkins,
+    public BuildResource(SettingsService settingsService, Jenkins jenkins,
             ApplicationPropertiesService applicationPropertiesService,
             PullRequestService prService,
             AuthenticationContext authContext, BuildPermissionsCondition permissionsCheck) {
-        super(i18nService);
         this.settingsService = settingsService;
         this.jenkins = jenkins;
         this.applicationPropertiesService = applicationPropertiesService;
@@ -157,7 +146,7 @@ public class BuildResource extends RestResource {
         if (authContext.isAuthenticated()) {
             Settings settings = settingsService.getSettings(repository);
             if (settings == null) {
-                return Response.ok(Lists.newArrayList()).build();
+                return Response.ok(new ArrayList<>()).build();
             }
 
             String projectKey = repository.getProject().getKey();
