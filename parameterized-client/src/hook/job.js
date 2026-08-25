@@ -97,15 +97,16 @@ const JobContainer = ({
 
     return (
         <div id={"job-" + id}>
-            <div className={"delete-job inline-button"}>
-                <a href={"#"} title={"Delete job"} onClick={e => {e.preventDefault(); deleteJob(id);}}>
-                    <span className={"aui-icon aui-icon-small aui-iconfont-remove"}/>
-                </a>
-            </div>
             <div className={"toggle-job inline-button"}>
                 <a href="#" title="Toggle job details" onClick={e => {e.preventDefault(); toggleJob(id);}}>
                     <span className={"aui-icon aui-icon-small " + (jobInfo.active ? "aui-iconfont-expanded" : "aui-iconfont-collapsed")}/>
                     {jobInfo.jobName}
+                </a>
+            </div>
+            <div className={"delete-job inline-button"} style={{ marginLeft: "20px" }}>
+                <a
+                    href={"#"} title={"Delete job"} onClick={e => {e.preventDefault(); deleteJob(id);}}>
+                    [Delete]
                 </a>
             </div>
             <GenericField jobInfo={jobInfo}  id={id} errors={errors} updateText={updateText} fieldName={"jobName"} fieldLabel={"Job Name"} required={true}/>
