@@ -9,7 +9,7 @@ import com.atlassian.bitbucket.repository.RepositoryService;
 import com.atlassian.plugin.web.Condition;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public abstract class BaseCondition implements Condition {
     protected static final String REPOSITORY = "repository";

@@ -100,12 +100,7 @@
   
   <!-- Rest resource -->
   <rest key="jenkins-rest" path="/parameterized-builds" version="1.0">
-    <dispatcher>REQUEST</dispatcher>
-    <dispatcher>FORWARD</dispatcher>
-    <init-param>
-      <param-name>extension.filter.excludes</param-name>
-      <param-value>.*</param-value>
-    </init-param>
+    <description>Parameterized Builds REST resources</description>
   </rest>
   
   <!-- web items -->

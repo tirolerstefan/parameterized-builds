@@ -4,13 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import com.atlassian.bitbucket.repository.RepositoryService;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 import com.atlassian.bitbucket.hook.repository.RepositoryHook;
 import com.atlassian.bitbucket.pull.PullRequestRef;
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,8 +35,7 @@ import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 import com.kylenicholls.stash.parameterizedbuilds.item.JenkinsResponse;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,6 +62,7 @@ public class BuildResourceTest {
     private ApplicationPropertiesService propertiesService;
     private PullRequestService prService;
     private BuildPermissionsCondition permissionsCheck;
+    private RepositoryService repositoryService;
     private Settings settings;
     private UriInfo uriInfo;
     private ApplicationUser user;
@@ -70,10 +70,10 @@ public class BuildResourceTest {
     private RepositoryHook hook;
     private final Server globalServer = new Server("globalurl", "global server", "globaluser",
             "globaltoken", false, false);
-    private final List<Server> globalServers = Lists.newArrayList(globalServer);
+    private final List<Server> globalServers = new ArrayList<>(List.of(globalServer));
     private final Server projectServer = new Server("projecturl", "project server", "projectuser",
             "projecttoken", false, false);
-    private final List<Server> projectServers = Lists.newArrayList(projectServer);
+    private final List<Server> projectServers = new ArrayList<>(List.of(projectServer));
 
     @Before
     public void setup() throws Exception {
@@ -83,8 +83,9 @@ public class BuildResourceTest {
         propertiesService = mock(ApplicationPropertiesService.class);
         prService = mock(PullRequestService.class);
         permissionsCheck = mock(BuildPermissionsCondition.class);
+        repositoryService = mock(RepositoryService.class);
         rest = new BuildResource(settingsService, jenkins, propertiesService,
-                prService, authContext, permissionsCheck);
+                prService, authContext, permissionsCheck, repositoryService);
 
         repository = mock(Repository.class);
         settings = mock(Settings.class);
@@ -93,6 +94,7 @@ public class BuildResourceTest {
 
         when(authContext.isAuthenticated()).thenReturn(true);
         when(authContext.getCurrentUser()).thenReturn(user);
+        when(repositoryService.getBySlug(PROJECT_KEY, REPO_SLUG)).thenReturn(repository);
         when(settingsService.getSettings(repository)).thenReturn(settings);
         when(repository.getProject()).thenReturn(project);
         when(jenkins.getJenkinsServers(null)).thenReturn(globalServers);
@@ -115,7 +117,7 @@ public class BuildResourceTest {
     @Test
     public void testTriggerBuildNotAuthed() {
         when(authContext.isAuthenticated()).thenReturn(false);
-        Response actual = rest.triggerBuild(repository, null, null, null);
+        Response actual = rest.triggerBuild(PROJECT_KEY, REPO_SLUG, null, null, null);
 
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), actual.getStatus());
     }
@@ -123,7 +125,7 @@ public class BuildResourceTest {
     @Test
     public void testTriggerBuildNoRepoSettings() {
         when(settingsService.getSettings(repository)).thenReturn(null);
-        Response actual = rest.triggerBuild(repository, null, null,null);
+        Response actual = rest.triggerBuild(PROJECT_KEY, REPO_SLUG, null, null,null);
 
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), actual.getStatus());
     }
@@ -132,7 +134,7 @@ public class BuildResourceTest {
     public void testTriggerBuildNoMatchingJob() {
         Job job = new Job.JobBuilder(1).triggers(new String[] { "add" }).build();
         jobs.add(job);
-        Response actual = rest.triggerBuild(repository, "0", "test",null);
+        Response actual = rest.triggerBuild(PROJECT_KEY, REPO_SLUG, "0", "test",null);
 
         Map<String, Object> expected = new LinkedHashMap<>();
         expected.put("message", "No settings found for this job");
@@ -150,7 +152,7 @@ public class BuildResourceTest {
         query.add("param2", "value2");
         when(uriInfo.getQueryParameters()).thenReturn(query);
         when(jenkinsConn.triggerJob(any(), any(), any(), any())).thenReturn(message);
-        Response results = rest.triggerBuild(repository, "0", "test", uriInfo);
+        Response results = rest.triggerBuild(PROJECT_KEY, REPO_SLUG, "0", "test", uriInfo);
 
         assertEquals(Response.Status.OK.getStatusCode(), results.getStatus());
         assertEquals(message.getMessage(), results.getEntity());
@@ -159,19 +161,19 @@ public class BuildResourceTest {
     @Test
     public void testGetJenkinsServersNotAuthed() {
         when(authContext.isAuthenticated()).thenReturn(false);
-        Response actual = rest.getJenkinsServers(repository);
+        Response actual = rest.getJenkinsServers(PROJECT_KEY, REPO_SLUG);
 
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), actual.getStatus());
     }
 
     @Test
     public void testGetJenkinsServersOnlyProjectDefined() {
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         when(jenkins.getJenkinsServers(PROJECT_KEY)).thenReturn(projectServers);
-        Response actual = rest.getJenkinsServers(repository);
+        Response actual = rest.getJenkinsServers(PROJECT_KEY, REPO_SLUG);
 
         @SuppressWarnings("serial")
-        Map<String, String> expected = new HashMap<String, String>() {{
+        Map<String, Object> expected = new HashMap<>() {{
             put("url", projectServer.getBaseUrl());
             put("alias", projectServer.getAlias());
             put("scope", "project");
@@ -184,10 +186,10 @@ public class BuildResourceTest {
 
     @Test
     public void testGetJenkinsServersOnlyGlobalDefined() {
-        Response actual = rest.getJenkinsServers(repository);
+        Response actual = rest.getJenkinsServers(PROJECT_KEY, REPO_SLUG);
 
         @SuppressWarnings("serial")
-        Map<String, String> expected = new HashMap<String, String>() {{
+        Map<String, Object> expected = new HashMap<>() {{
             put("url", globalServer.getBaseUrl());
             put("alias", globalServer.getAlias());
             put("scope", "global");
@@ -201,10 +203,10 @@ public class BuildResourceTest {
     @Test
     public void testGetJenkinsServersProjectAndGlobalDefined() {
         when(jenkins.getJenkinsServers(PROJECT_KEY)).thenReturn(projectServers);
-        Response actual = rest.getJenkinsServers(repository);
+        Response actual = rest.getJenkinsServers(PROJECT_KEY, REPO_SLUG);
 
         @SuppressWarnings("serial")
-        Map<String, String> expectedProject = new HashMap<String, String>() {{
+        Map<String, Object> expectedProject = new HashMap<>() {{
             put("url", projectServer.getBaseUrl());
             put("alias", projectServer.getAlias());
             put("scope", "project");
@@ -213,7 +215,7 @@ public class BuildResourceTest {
         }};
 
         @SuppressWarnings("serial")
-        Map<String, String> expectedGlobal = new HashMap<String, String>() {{
+        Map<String, Object> expectedGlobal = new HashMap<>() {{
             put("url", globalServer.getBaseUrl());
             put("alias", globalServer.getAlias());
             put("scope", "global");
@@ -222,21 +224,21 @@ public class BuildResourceTest {
             put("default_user", globalServer.getUser());
         }};
 
-        assertEquals(Lists.newArrayList(expectedGlobal, expectedProject), actual.getEntity());
+        assertEquals(new ArrayList<>(List.of(expectedGlobal, expectedProject)), actual.getEntity());
     }
 
     @Test
     public void testGetJenkinsServersNoServersDefined() {
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
-        Response actual = rest.getJenkinsServers(repository);
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
+        Response actual = rest.getJenkinsServers(PROJECT_KEY, REPO_SLUG);
 
-        assertEquals(Lists.newArrayList(), actual.getEntity());
+        assertEquals(new ArrayList<>(), actual.getEntity());
     }
 
     @Test
     public void testGetJobsNotAuthed() {
         when(authContext.isAuthenticated()).thenReturn(false);
-        Response actual = rest.getJobs(repository, "branch", "commit", null, 0);
+        Response actual = rest.getJobs(PROJECT_KEY, REPO_SLUG, "branch", "commit", null, 0);
 
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), actual.getStatus());
     }
@@ -244,7 +246,7 @@ public class BuildResourceTest {
     @Test
     public void testGetJobsNoRepoSettings() {
         when(settingsService.getSettings(repository)).thenReturn(null);
-        Response actual = rest.getJobs(repository, "branch", "commit", null, 0);
+        Response actual = rest.getJobs(PROJECT_KEY, REPO_SLUG, "branch", "commit", null, 0);
 
         assertEquals(Response.Status.OK.getStatusCode(), actual.getStatus());
     }
@@ -254,7 +256,7 @@ public class BuildResourceTest {
     public void testGetJobsNoManualJob() {
         Job job = new Job.JobBuilder(1).triggers(new String[] { "add" }).build();
         jobs.add(job);
-        Response actual = rest.getJobs(repository, "branch", "commit", null, 0);
+        Response actual = rest.getJobs(PROJECT_KEY, REPO_SLUG, "branch", "commit", null, 0);
 
         assertEquals(Response.Status.OK.getStatusCode(), actual.getStatus());
         assertEquals(new ArrayList<Map<String, Object>>(), (List<Map<String, Object>>) actual
@@ -291,7 +293,7 @@ public class BuildResourceTest {
         when(pr.getTitle()).thenReturn(title);
         when(pr.getDescription()).thenReturn(description);
         when(prService.getById(repository.getId(), prId)).thenReturn(pr);
-        Response actual = rest.getJobs(repository, "branch", "commit", prDest, prId);
+        Response actual = rest.getJobs(PROJECT_KEY, REPO_SLUG, "branch", "commit", prDest, prId);
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> jobData = (List<Map<String, Object>>) actual.getEntity();
@@ -333,7 +335,7 @@ public class BuildResourceTest {
         Job job = new Job.JobBuilder(1).jobName(jobName).triggers(new String[] { "manual" })
                 .buildParameters("param2=$PRDESTINATION").permissions("REPO_ADMIN").build();
         jobs.add(job);
-        Response actual = rest.getJobs(repository, "branch", "commit", null, 0);
+        Response actual = rest.getJobs(PROJECT_KEY, REPO_SLUG, "branch", "commit", null, 0);
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> jobData = (List<Map<String, Object>>) actual.getEntity();
@@ -348,7 +350,7 @@ public class BuildResourceTest {
     @Test
     public void testGetHookEnabled() {
         when(hook.isEnabled()).thenReturn(true);
-        Response actual = rest.getHookEnabled(repository);
+        Response actual = rest.getHookEnabled(PROJECT_KEY, REPO_SLUG);
 
         assertEquals(Response.Status.OK.getStatusCode(), actual.getStatus());
         assert (boolean) actual.getEntity();
@@ -357,7 +359,7 @@ public class BuildResourceTest {
     @Test
     public void testGetHookNotEnabled() {
         when(hook.isEnabled()).thenReturn(false);
-        Response actual = rest.getHookEnabled(repository);
+        Response actual = rest.getHookEnabled(PROJECT_KEY, REPO_SLUG);
 
         assertEquals(Response.Status.OK.getStatusCode(), actual.getStatus());
         assert  !(boolean) actual.getEntity();
@@ -366,7 +368,7 @@ public class BuildResourceTest {
     @Test
     public void testGetHookEnabledNull() {
         when(settingsService.getHook(any())).thenReturn(null);
-        Response actual = rest.getHookEnabled(repository);
+        Response actual = rest.getHookEnabled(PROJECT_KEY, REPO_SLUG);
 
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), actual.getStatus());
     }
@@ -374,7 +376,7 @@ public class BuildResourceTest {
     @Test
     public void testGetHookEnabledNotAuthed() {
         when(authContext.isAuthenticated()).thenReturn(false);
-        Response actual = rest.getHookEnabled(repository);
+        Response actual = rest.getHookEnabled(PROJECT_KEY, REPO_SLUG);
 
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), actual.getStatus());
     }

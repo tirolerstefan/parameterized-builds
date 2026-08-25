@@ -6,16 +6,23 @@ import com.atlassian.bitbucket.content.ChangeContext;
 import com.atlassian.bitbucket.content.ChangeSummary;
 import com.atlassian.bitbucket.branch.cascadingmerge.CascadingMergeEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestEvent;
+import com.atlassian.bitbucket.hook.repository.RepositoryHook;
+import com.atlassian.bitbucket.hook.repository.RepositoryHookDetails;
 import com.atlassian.bitbucket.pull.PullRequest;
 import com.atlassian.bitbucket.pull.PullRequestChangesRequest;
 import com.atlassian.bitbucket.pull.PullRequestService;
+import com.atlassian.bitbucket.setting.Settings;
+import com.kylenicholls.stash.parameterizedbuilds.PullRequestHook;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 import com.kylenicholls.stash.parameterizedbuilds.item.BitbucketVariables;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job.Trigger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 public class PRHandler extends BaseHandler {
 
@@ -23,6 +30,7 @@ public class PRHandler extends BaseHandler {
     PullRequest pullRequest;
     String url;
     final Trigger trigger;
+    private static final Logger logger = LoggerFactory.getLogger(PRHandler.class);
 
     /**
      * Constructor for normal pull-request events:
@@ -65,9 +73,45 @@ public class PRHandler extends BaseHandler {
 
     @Override
     public void run() {
-        if (!settingsService.getHook(repository).isEnabled()) {
+        logger.debug(
+                "PRHandler.run entered: handler={}, trigger={}, repository={}/{}, projectKey={}",
+                getClass().getSimpleName(),
+                trigger,
+                repository.getProject().getKey(),
+                repository.getSlug(),
+                projectKey);
+
+        RepositoryHook hook = settingsService.getHook(repository);
+
+        if (hook == null) {
+            logger.warn(
+                    "No repository hook found for {}/{}",
+                    repository.getProject().getKey(),
+                    repository.getSlug());
             return;
         }
+
+        RepositoryHookDetails details = hook.getDetails();
+
+        logger.debug(
+                "Repository hook returned: class={}, key={}, enabled={}, configured={}",
+                hook.getClass().getName(),
+                details == null ? null : details.getKey(),  /* is null during testing */
+                hook.isEnabled(),
+                hook.isConfigured());
+
+        if (!hook.isEnabled()) {
+            logger.debug(
+                    "Skipping handler because the hook is disabled for {}/{}",
+                    repository.getProject().getKey(),
+                    repository.getSlug());
+            return;
+        }
+
+        logger.debug(
+                "Repository hook is enabled; continuing with trigger {}",
+                trigger);
+
         super.run();
     }
 

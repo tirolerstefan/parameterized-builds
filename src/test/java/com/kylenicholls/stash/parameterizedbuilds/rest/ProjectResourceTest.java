@@ -8,12 +8,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.core.MultivaluedMap;
-
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +27,7 @@ import com.kylenicholls.stash.parameterizedbuilds.ciserver.JenkinsConnection;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,7 +53,7 @@ public class ProjectResourceTest {
     public void setup() throws Exception {
         projectServer = new Server("http://projecturl", "project server", "projectuser",
                 "projecttoken", false, false);
-        projectServers = Lists.newArrayList(projectServer);
+        projectServers = new ArrayList<>(List.of(projectServer));
         projectKey = "TEST";
         jenkins = mock(Jenkins.class);
         authContext = mock(AuthenticationContext.class);
@@ -82,15 +80,15 @@ public class ProjectResourceTest {
     
     @Test
     public void testGetServersEmpty(){
-        when(jenkins.getJenkinsServers(projectKey)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(projectKey)).thenReturn(new ArrayList<>());
         Response actual = rest.getServers(ui);
 
-        assertEquals(Lists.newArrayList(), actual.getEntity());
+        assertEquals(new ArrayList<>(), actual.getEntity());
     }
 
     @Test
     public void testGetServersOkStatus(){
-        when(jenkins.getJenkinsServers(projectKey)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(projectKey)).thenReturn(new ArrayList<>());
         Response actual = rest.getServers(ui);
 
         assertEquals(Response.Status.OK.getStatusCode(), actual.getStatus());
@@ -103,7 +101,7 @@ public class ProjectResourceTest {
 
         Map<String, Object> expected = rest.createServerMap(projectServer, projectKey);
 
-        assertEquals(Lists.newArrayList(expected), actual.getEntity());
+        assertEquals(new ArrayList<>(List.of(expected)), actual.getEntity());
     }
 
     @Test
@@ -237,10 +235,13 @@ public class ProjectResourceTest {
         when(jenkins.getJenkinsServer(eq(projectKey), any())).thenReturn(null);
         Response actual = rest.addServer(ui, projectServer, projectServer.getAlias());
 
-        String response = actual.getEntity().toString();
-        List<String> errors = (List<String>) new Gson().fromJson(response, Map.class).get("errors");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) actual.getEntity();
 
-        assertEquals(Lists.newArrayList("Base Url required."), errors);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) response.get("errors");
+
+        assertEquals(new ArrayList<>(List.of("Base Url required.")), errors);
     }
 
     @Test
@@ -259,10 +260,13 @@ public class ProjectResourceTest {
         when(jenkins.getJenkinsServer(eq(projectKey), any())).thenReturn(null);
         Response actual = rest.addServer(ui, projectServer, projectServer.getAlias());
 
-        String response = actual.getEntity().toString();
-        List<String> errors = (List<String>) new Gson().fromJson(response, Map.class).get("errors");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) actual.getEntity();
 
-        assertEquals(Lists.newArrayList("Invalide Base Url."), errors);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) response.get("errors");
+
+        assertEquals(new ArrayList<>(List.of("Invalide Base Url.")), errors);
     }
 
     @Test
@@ -273,10 +277,13 @@ public class ProjectResourceTest {
         when(jenkins.getJenkinsServer(eq(projectKey), any())).thenReturn(null);
         Response actual = rest.addServer(ui, projectServer, projectServer.getAlias());
 
-        String response = actual.getEntity().toString();
-        List<String> errors = (List<String>) new Gson().fromJson(response, Map.class).get("errors");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) actual.getEntity();
 
-        assertEquals(Lists.newArrayList("Base Url required.", "Alias required."), errors);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) response.get("errors");
+
+        assertEquals(new ArrayList<>(List.of("Base Url required.", "Alias required.")), errors);
     }
 
     @Test

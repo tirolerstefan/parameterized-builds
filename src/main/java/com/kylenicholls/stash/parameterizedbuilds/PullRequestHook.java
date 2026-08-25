@@ -28,6 +28,8 @@ import com.atlassian.bitbucket.event.pull.PullRequestOpenedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestParticipantApprovedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestReopenedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestRescopedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullRequestHook {
     private final SettingsService settingsService;
@@ -35,6 +37,7 @@ public class PullRequestHook {
     private final Jenkins jenkins;
     private final String url;
     private final ExecutorService executorService;
+    private static final Logger logger = LoggerFactory.getLogger(PullRequestHook.class);
 
     public PullRequestHook(
             SettingsService settingsService,
@@ -58,6 +61,9 @@ public class PullRequestHook {
 
     @EventListener
     public void onPullRequestReOpened(PullRequestReopenedEvent event) throws IOException {
+        logger.info(
+                "Received PullRequestReopenedEvent: pullRequest={}",
+                event.getPullRequest());
         runHandler(new PRReopenedHandler(settingsService, pullRequestService, jenkins, event, url));
     }
 
@@ -93,6 +99,9 @@ public class PullRequestHook {
 
     @EventListener
     public void onPullRequestDeclined(PullRequestDeclinedEvent event) throws IOException {
+        logger.info(
+                "Received PullRequestDeclinedEvent: pullRequest={}",
+                event.getPullRequest());
         runHandler(new PRDeclinedHandler(settingsService, pullRequestService, jenkins, event, url));
     }
 
@@ -108,6 +117,27 @@ public class PullRequestHook {
     }
 
     protected void runHandler(BaseHandler handler) {
-        this.executorService.submit(() -> handler.run());
+        logger.debug(
+                "Submitting handler: {}",
+                handler.getClass().getName());
+
+        executorService.submit(() -> {
+            try {
+                logger.debug(
+                        "Starting handler: {}",
+                        handler.getClass().getName());
+
+                handler.run();
+
+                logger.debug(
+                        "Completed handler: {}",
+                        handler.getClass().getName());
+            } catch (Exception e) {
+                logger.error(
+                        "Handler failed: {}",
+                        handler.getClass().getName(),
+                        e);
+            }
+        });
     }
 }

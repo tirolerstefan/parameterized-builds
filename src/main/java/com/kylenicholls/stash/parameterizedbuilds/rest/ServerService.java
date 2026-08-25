@@ -6,26 +6,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
 
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import org.apache.http.client.utils.URIBuilder;
 
 public interface ServerService {
 
-    public class Token {
+    class Token {
         private String token;
 
         public Token(){}
@@ -39,38 +30,18 @@ public interface ServerService {
         }
     }
 
-    @GET
-    @Path("/servers")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public Response getServers(@Context UriInfo ui);
+    Response getServers(@Context UriInfo ui);
 
-    @POST
-    @Path("/servers/validate")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public Response validate(@Context UriInfo ui, Server server);
+    Response validate(@Context UriInfo ui, Server server);
 
-    @PUT
-    @Path("/servers/{serverAlias}")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public Response addServer(@Context UriInfo ui, Server server, 
-                              @PathParam("id") String serverAlias);
+    Response addServer(@Context UriInfo ui, Server server,
+                              @PathParam("serverAlias") String serverAlias);
 
-    @DELETE
-    @Path("/servers/{serverAlias}")
-    public Response removeServer(@Context UriInfo ui);
+    Response removeServer(@Context UriInfo ui);
 
-    @PUT
-    @Path("/servers/{serverAlias}/userToken")
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON })
-    public Response addUserToken(@Context UriInfo ui, Token token);
+    Response addUserToken(@Context UriInfo ui, Token token);
 
-    @DELETE
-    @Path("/servers/{serverAlias}/userToken")
-    public Response removeUserToken(@Context UriInfo ui);
+    Response removeUserToken(@Context UriInfo ui);
 
     default Map<String, Object> createServerMap(Server server, String projectKey){
         Map<String, Object> serverMap = new HashMap<>();

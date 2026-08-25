@@ -108,9 +108,12 @@ public class ParameterizedBuildHook
                         "You must choose a jenkins server");
             }
 
-            if (job.getTriggers().contains(Trigger.NULL)) {
-                errors.addFieldError(SettingsService.TRIGGER_PREFIX
-                        + i, "You must choose at least one trigger");
+            if (job.getTriggers() == null
+                    || job.getTriggers().isEmpty()
+                    || job.getTriggers().contains(Trigger.NULL)) {
+                errors.addFieldError(
+                        SettingsService.TRIGGER_PREFIX + i,
+                        "You must choose at least one trigger");
             }
 
             PatternSyntaxException branchException = null;

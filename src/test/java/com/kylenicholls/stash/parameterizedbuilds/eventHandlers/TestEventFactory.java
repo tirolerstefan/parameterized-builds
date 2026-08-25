@@ -49,9 +49,9 @@ public class TestEventFactory {
         when(reopenedEvent.getPullRequest()).thenReturn(pullRequest);
         when(rescopedEvent.getPullRequest()).thenReturn(pullRequest);
         when(autoMergeEvent.getRepository()).thenReturn(repository);
-        //when(autoMergeEvent.getPullRequest()).thenReturn(pullRequest);
-        //when(autoMergeEvent.isAutoMerge()).thenReturn(true);
-        //when(autoMergeEvent.getCommit()).thenReturn(mergeCommit);
+        when(mergedEvent.getPullRequest()).thenReturn(pullRequest);
+        when(mergedEvent.isAutoMerge()).thenReturn(true);
+        when(mergedEvent.getCommit()).thenReturn(mergeCommit);
         when(declinedEvent.getPullRequest()).thenReturn(pullRequest);
         when(deletedEvent.getPullRequest()).thenReturn(pullRequest);
         when(approvedEvent.getPullRequest()).thenReturn(pullRequest);

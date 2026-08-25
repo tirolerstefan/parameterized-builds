@@ -1,6 +1,7 @@
 package com.kylenicholls.stash.parameterizedbuilds.item;
 
-import com.google.gson.JsonObject;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class UserToken {
     private String baseUrl;
@@ -44,14 +45,14 @@ public class UserToken {
         return token;
     }
 
-    public JsonObject toJson(){
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("url", this.baseUrl);
-        jsonObject.addProperty("alias", this.alias);
-        jsonObject.addProperty("project_key", this.projectKey);
-        jsonObject.addProperty("project_name", this.projectName);
-        jsonObject.addProperty("default_user", this.userSlug);
-        jsonObject.addProperty("default_token", this.token);
-        return jsonObject;
+    public Map<String, Object> asMap() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("url", baseUrl);
+        result.put("alias", alias);
+        result.put("project_key", projectKey);
+        result.put("project_name", projectName);
+        result.put("default_user", userSlug);
+        result.put("default_token", token);
+        return result;
     }
 }

@@ -1,16 +1,11 @@
 package com.kylenicholls.stash.parameterizedbuilds.item;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.atlassian.bitbucket.pull.PullRequest;
 import com.atlassian.bitbucket.repository.Branch;
 import com.atlassian.bitbucket.repository.RefChange;
 import com.atlassian.bitbucket.repository.Repository;
-import com.google.common.base.Preconditions;
 import java.util.function.Supplier;
 
 import com.kylenicholls.stash.parameterizedbuilds.item.Job.Trigger;
@@ -44,7 +39,7 @@ public class BitbucketVariables {
         }
 
         public Builder add(String key, Supplier<String> supplier) {
-            Preconditions.checkNotNull(key);
+            Objects.requireNonNull(key);
             if (variables.containsKey(key)) {
                 return this;
             }

@@ -160,20 +160,30 @@ public class Job {
         }
 
         public JobBuilder triggers(String[] triggersAry) {
-            List<Trigger> triggers = new ArrayList<>();
-            for (String trig : triggersAry) {
-                try {
-                    triggers.add(Trigger.valueOf(trig.toUpperCase()));
-                } catch (IllegalArgumentException e) {
-                    logger.error("IllegalArgumentException in Job.triggers: " + e.getMessage(), e);
-                    triggers.add(Trigger.NULL);
+            List<Trigger> parsedTriggers = new ArrayList<>();
+
+            if (triggersAry != null) {
+                for (String triggerName : triggersAry) {
+                    if (triggerName == null || triggerName.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    try {
+                        parsedTriggers.add(
+                                Trigger.valueOf(triggerName.trim().toUpperCase()));
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("Ignoring unknown trigger '{}'", triggerName);
+                    }
                 }
             }
-            return triggers(triggers);
+
+            return triggers(parsedTriggers);
         }
 
         public JobBuilder triggers(List<Trigger> triggers) {
-            this.triggers = triggers;
+            this.triggers = triggers == null
+                    ? new ArrayList<>()
+                    : new ArrayList<>(triggers);
             return this;
         }
 
