@@ -72,16 +72,22 @@ public class BuildResource {
     }
 
     @POST
-    @Path("triggerBuild/{id}/{branch}")
+    @Path("triggerBuild/{id}")
     public Response triggerBuild(
             @PathParam("projectKey") String projectKey,
             @PathParam("repositorySlug") String repositorySlug,
             @PathParam("id") String id,
-            @PathParam("branch") String branch,
+            @QueryParam("branch") String branch,
             @Context UriInfo uriInfo) {
 
         if (!authContext.isAuthenticated()) {
             return Response.status(Response.Status.FORBIDDEN).build();
+        }
+
+        if (branch == null || branch.isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("message", "Branch is required"))
+                    .build();
         }
 
         Repository repository = getRepository(projectKey, repositorySlug);

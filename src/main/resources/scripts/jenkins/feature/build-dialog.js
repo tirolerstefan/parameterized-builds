@@ -38,7 +38,7 @@ define('trigger/build-dialog', [
                             var splitBranch = branch.split("/")
                             splitBranch.splice(0, 2) //remove ref/heads or ref/tags
                             var branchName = splitBranch.join("%2F")
-                            var buildUrl = getResourceUrl("triggerBuild/0/") + encodeURIComponent(branchName);
+                            var buildUrl = getResourceUrl("triggerBuild/0/?branch=") + encodeURIComponent(branchName);
                             triggerBuild(buildUrl, branch);
                             return false;
                         }
@@ -89,7 +89,7 @@ define('trigger/build-dialog', [
                 var splitBranch = branch.split("/")
                 splitBranch.splice(0, 2) //remove ref/heads or ref/tags
                 var branchName = splitBranch.join("%2F")
-                buildUrl += "/" + jobs[id].id + "/" + encodeURIComponent(branchName) + "?";
+                buildUrl += "/" + jobs[id].id + "/?branch=" + encodeURIComponent(branchName) + "&";
                 $jobParameters.each(function(index, jobParam) {
                     var $curJobParam = $(jobParam);
                     var key = $curJobParam.find('label').text();
