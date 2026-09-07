@@ -1,8 +1,5 @@
 package com.kylenicholls.stash.parameterizedbuilds.item;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class UserToken {
     private String baseUrl;
     private String alias;
@@ -11,8 +8,13 @@ public class UserToken {
     private String userSlug;
     private String token;
 
-    public UserToken(String baseUrl, String alias, String projectKey, String projectName, 
-            String userSlug, String token) {
+    public UserToken(
+            String baseUrl,
+            String alias,
+            String projectKey,
+            String projectName,
+            String userSlug,
+            String token) {
         this.baseUrl = baseUrl;
         this.alias = alias;
         this.projectKey = projectKey;
@@ -45,14 +47,60 @@ public class UserToken {
         return token;
     }
 
-    public Map<String, Object> asMap() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("url", baseUrl);
-        result.put("alias", alias);
-        result.put("project_key", projectKey);
-        result.put("project_name", projectName);
-        result.put("default_user", userSlug);
-        result.put("default_token", token);
-        return result;
+    public String toJson() {
+        return "{"
+                + "\"url\":" + jsonString(baseUrl) + ","
+                + "\"alias\":" + jsonString(alias) + ","
+                + "\"project_key\":" + jsonString(projectKey) + ","
+                + "\"project_name\":" + jsonString(projectName) + ","
+                + "\"default_user\":" + jsonString(userSlug) + ","
+                + "\"default_token\":" + jsonString(token)
+                + "}";
+    }
+
+    private static String jsonString(String value) {
+        if (value == null) {
+            return "null";
+        }
+
+        StringBuilder result = new StringBuilder("\"");
+
+        for (int i = 0; i < value.length(); i++) {
+            char character = value.charAt(i);
+
+            switch (character) {
+                case '"':
+                    result.append("\\\"");
+                    break;
+                case '\\':
+                    result.append("\\\\");
+                    break;
+                case '\b':
+                    result.append("\\b");
+                    break;
+                case '\f':
+                    result.append("\\f");
+                    break;
+                case '\n':
+                    result.append("\\n");
+                    break;
+                case '\r':
+                    result.append("\\r");
+                    break;
+                case '\t':
+                    result.append("\\t");
+                    break;
+                default:
+                    if (character < 0x20) {
+                        result.append(String.format(
+                                "\\u%04x",
+                                (int) character));
+                    } else {
+                        result.append(character);
+                    }
+            }
+        }
+
+        return result.append('"').toString();
     }
 }

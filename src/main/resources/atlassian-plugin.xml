@@ -11,7 +11,7 @@
 
   <!-- add our i18n resource -->
   <resource type="i18n" name="i18n" location="parameterized-builds"/>
-  
+
   <!-- add our components resources -->
   <component-import key="soyTemplateRenderer" interface="com.atlassian.soy.renderer.SoyTemplateRenderer"/>
   <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties" />
@@ -21,7 +21,7 @@
   <component key="PullRequestHook" class="com.kylenicholls.stash.parameterizedbuilds.PullRequestHook"/>
   <component key="Jenkins" class="com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins"/>
   <component key="PermissionsCondition" class="com.kylenicholls.stash.parameterizedbuilds.conditions.BuildPermissionsCondition"/>
-  
+
   <!-- add our web resources -->
   <web-resource key="parameterized-builds-resources" name="Parameterized Builds Web Resources">
     <dependency>com.atlassian.auiplugin:ajs</dependency>
@@ -29,7 +29,7 @@
     <resource type="download" name="images/" location="/images"/>
     <context>parameterized-builds</context>
   </web-resource>
-  
+
   <!-- Hook config css resource -->
   <web-resource key="parameterized-builds-hook-css">
     <transformation extension="less">
@@ -52,14 +52,18 @@
   <web-resource key="pb-blayout-trigger-resource" name="Jenkins branch build layout resource">
     <resource name="pb-blayout-trigger.js" type="download" location="/scripts/jenkins/pb-blayout-trigger.js"/>
     <dependency>${project.groupId}.${project.artifactId}:build-dialog</dependency>
+    <dependency>com.atlassian.plugins.atlassian-plugins-webresource-plugin:context-path</dependency>
+    <context>bitbucket.ui.branch.layout.actions.dropdown</context>
   </web-resource>
-  
+
   <!-- List button resource -->
   <web-resource key="pb-blist-trigger-resource" name="Jenkins branch build list resource">
     <resource name="pb-blist-trigger.js" type="download" location="/scripts/jenkins/pb-blist-trigger.js"/>
     <dependency>${project.groupId}.${project.artifactId}:build-dialog</dependency>
+    <dependency>com.atlassian.plugins.atlassian-plugins-webresource-plugin:context-path</dependency>
+    <context>bitbucket.ui.branches.actions</context>
   </web-resource>
-  
+
   <!-- Javascript for jenkins server settings form -->
   <web-resource key="jenkins-settings-form" name="Jenkins Settings Form">
     <resource name="server_form.js" type="download" location="/jenkins_settings/server_form.pack.js"/>
@@ -83,7 +87,7 @@
     <dependency>com.atlassian.auiplugin:ajs</dependency>
     <dependency>com.atlassian.bitbucket.server.bitbucket-web-api:branch-selector-field</dependency>
   </web-resource>
-  
+
   <!-- Hook -->
   <repository-hook name="Parameterized Builds Hook" i18n-name-key="parameterized-builds.name" key="parameterized-build-hook" class="com.kylenicholls.stash.parameterizedbuilds.ParameterizedBuildHook">
     <description key="parameterized-builds.description">Adds a build hook with customizable parameters for Jenkins</description>
@@ -93,46 +97,38 @@
       <directory location="/hook/"/>
     </config-form>
     <scopes>
-        <scope>project</scope>
-        <scope>repository</scope>
+      <scope>project</scope>
+      <scope>repository</scope>
     </scopes>
   </repository-hook>
-  
+
   <!-- Rest resource -->
   <rest key="jenkins-rest" path="/parameterized-builds" version="1.0">
     <description>Parameterized Builds REST resources</description>
   </rest>
-  
+
   <!-- web items -->
   <web-item key="pr-trigger-jenkins" name="Trigger Jenkins Build From Pull Request" weight="1000" section="bitbucket.ui.pullrequest.action">
     <label>Build in Jenkins</label>
     <tooltip>Build branch in Jenkins</tooltip>
   </web-item>
-  <client-web-item key="blayout-trigger-jenkins" name="Trigger Jenkins Builds From Branch Layout" section="bitbucket.branch.layout.actions.dropdown" weight="1000">
+
+  <!-- Branch layout Jenkins action -->
+  <web-item key="branch-layout-trigger-jenkins" name="Trigger Jenkins Build From Branch" section="bitbucket.ui.branch.layout.actions.dropdown" weight="1000">
     <label>Build in Jenkins</label>
     <tooltip>Build branch in Jenkins</tooltip>
     <styleClass>parameterized-build-layout</styleClass>
     <dependency>${project.groupId}.${project.artifactId}:pb-blayout-trigger-resource</dependency>
-    <client-condition>function(ctx) { return ctx.atRevisionRef.type.id === 'branch' || ctx.atRevisionRef.type.id === 'tag'}</client-condition>
-    <resource name="view" type="soy" location="${project.groupId}.${project.artifactId}:trigger-jenkins/com.kylenicholls.stash.parameterizedbuilds.jenkins.branchBuild.dialogContent"/>
-    <conditions type="AND">
-      <condition class="com.kylenicholls.stash.parameterizedbuilds.conditions.HookIsEnabledCondition"/>
-      <condition class="com.kylenicholls.stash.parameterizedbuilds.conditions.ManualButtonCondition"/>
-      <condition class="com.kylenicholls.stash.parameterizedbuilds.conditions.BuildPermissionsCondition"/>
-    </conditions>
-  </client-web-item>
-  <client-web-item key="blist-trigger-jenkins" name="Trigger Jenkins Builds From Branch List" section="bitbucket.branch.list.actions.dropdown" weight="1000">
+  </web-item>
+
+  <!-- Branch list Jenkins action -->
+  <web-item key="branch-list-trigger-jenkins" name="Trigger Jenkins Build From Branch List" section="bitbucket.ui.branches.actions" weight="1000">
     <label>Build in Jenkins</label>
     <tooltip>Build branch in Jenkins</tooltip>
     <styleClass>parameterized-build-branchlist</styleClass>
     <dependency>${project.groupId}.${project.artifactId}:pb-blist-trigger-resource</dependency>
-    <conditions type="AND">
-      <condition class="com.kylenicholls.stash.parameterizedbuilds.conditions.HookIsEnabledCondition"/>
-      <condition class="com.kylenicholls.stash.parameterizedbuilds.conditions.ManualButtonCondition"/>
-      <condition class="com.kylenicholls.stash.parameterizedbuilds.conditions.BuildPermissionsCondition"/>
-    </conditions>
-  </client-web-item>
-  
+  </web-item>
+
   <client-resource key="jenkins-admin-soy" name="Jenkins Admin Soy">
     <directory location="/templates/" />
     <dependency>com.atlassian.bitbucket.server.bitbucket-web:global</dependency>
@@ -141,12 +137,12 @@
 
   <web-item name="Jenkins Admin Settings" key="jenkins-admin-tab" section="atl.admin/admin-plugins-section" weight="30">
     <label>Jenkins Settings</label>
-     <link linkId="reminder-config-link">/plugins/servlet/jenkins</link>
+    <link linkId="reminder-config-link">/plugins/servlet/jenkins</link>
   </web-item>
 
   <web-item name="Jenkins Admin Settings" key="jenkins-admin-project-tab" section="bitbucket.project.settings.panel/project-settings-addons-section" weight="30">
     <label>Jenkins Settings</label>
-     <link linkId="reminder-config-link">/plugins/servlet/jenkins/project/${project.key}</link>
+    <link linkId="reminder-config-link">/plugins/servlet/jenkins/project/${project.key}</link>
   </web-item>
 
   <web-item name="Jenkins User Settings" key="jenkins-user-tab" section="bitbucket.user.account.nav" weight="200">

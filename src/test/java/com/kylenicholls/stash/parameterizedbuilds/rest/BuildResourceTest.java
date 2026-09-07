@@ -125,9 +125,17 @@ public class BuildResourceTest {
     @Test
     public void testTriggerBuildNoRepoSettings() {
         when(settingsService.getSettings(repository)).thenReturn(null);
-        Response actual = rest.triggerBuild(PROJECT_KEY, REPO_SLUG, null, null,null);
 
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), actual.getStatus());
+        Response actual = rest.triggerBuild(
+                PROJECT_KEY,
+                REPO_SLUG,
+                "0",
+                "test-branch",
+                null);
+
+        assertEquals(
+                Response.Status.NOT_FOUND.getStatusCode(),
+                actual.getStatus());
     }
 
     @Test

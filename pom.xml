@@ -214,12 +214,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.14-atlassian-6</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
             <version>2.0.1</version>
@@ -250,7 +244,7 @@
                     </execution>
                     <execution>
                         <id>exec-npm-build</id>
-                        <phase>generate-resources</phase>
+                        <phase>process-resources</phase>
                         <configuration>
                             <workingDirectory>./parameterized-client</workingDirectory>
                             <executable>npm</executable>
@@ -274,17 +268,25 @@
                 <artifactId>bitbucket-maven-plugin</artifactId>
                 <version>${amps.version}</version>
                 <extensions>true</extensions>
+
                 <configuration>
                     <compressResources>false</compressResources>
-                    <testJvmArgs>
-                        --add-opens=java.xml/jdk.xml.internal=ALL-UNNAMED
-                        --add-opens=java.base/java.lang=ALL-UNNAMED
-                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                        --add-opens=java.base/java.net=ALL-UNNAMED
-                        --add-opens=java.base/java.util=ALL-UNNAMED
-                        --add-opens=java.base/java.util.stream=ALL-UNNAMED
-                        --add-opens=java.base/java.io=ALL-UNNAMED
-                    </testJvmArgs>
+
+                    <instructions>
+                        <Import-Package>
+                            *
+                        </Import-Package>
+                    </instructions>
+
+                    <includedFeModuleManifests>
+                        <includedFeModuleManifest>
+                            parameterized-client/package.json
+                        </includedFeModuleManifest>
+                        <includedFeModuleManifest>
+                            parameterized-client/package-lock.json
+                        </includedFeModuleManifest>
+                    </includedFeModuleManifests>
+
                     <products>
                         <product>
                             <id>bitbucket</id>

@@ -20,48 +20,201 @@ define('trigger/build-dialog', [
     var urlRegex = /(.+?)\/projects\/.+?\/repos\/.+?\/.*/
     var urlParts = window.location.href.match(urlRegex);
 
-    function bindToDropdownLink(linkSelector, dropDownSelector, getBranchNameFunction) {
-        $(document).on('aui-dropdown2-show', dropDownSelector, function () {
-            var $dropdownMenu = $(this);
-            var $buildTriggerButton = $(linkSelector);
-            var branchInfo = getBranchNameFunction($dropdownMenu);
-            var branch = branchInfo[0];
-            var commit = branchInfo[1];
+    /**
+     * Starts the Jenkins build workflow for a branch.
+     *
+     * This function can be called directly by a CSE button or indirectly
+     * through the legacy dropdown binding.
+     *
+     * @param {string} branch Full branch ref, for example refs/heads/master
+     * @param {string} commit Latest commit hash
+     * @return {*} jQuery promise returned by the jobs request
+     */
+    function openForRef(branch, commit) {
+        if (!branch) {
+            console.error(
+                "Cannot open Jenkins build dialog: branch is missing."
+            );
 
-            var triggerBuildSetup = function() {
-                var resourceUrl = getResourceUrl("getJobs") + "?branch=" + encodeURIComponent(branch) + "&commit=" + commit;
+            return;
+        }
 
-                return $.when(getJobs(resourceUrl)).then(function( jobs ) {
-                    allJobs = jobs
-                    if (jobs.length == 1){
-                        if (jobs[0].buildParameters.length == 0){
-                            var splitBranch = branch.split("/")
-                            splitBranch.splice(0, 2) //remove ref/heads or ref/tags
-                            var branchName = splitBranch.join("%2F")
-                            var buildUrl = getResourceUrl("triggerBuild/0/?branch=") + encodeURIComponent(branchName);
-                            triggerBuild(buildUrl, branch);
-                            return false;
-                        }
-                    }
-                    var buildUrl = getResourceUrl("triggerBuild");
-                    showManualBuildDialog(buildUrl, branch, jobs);
+        if (!commit) {
+            console.error(
+                "Cannot open Jenkins build dialog: commit is missing."
+            );
+
+            return;
+        }
+
+        console.log(
+            "Opening Jenkins build dialog:",
+            {
+                branch: branch,
+                commit: commit
+            }
+        );
+
+        var resourceUrl =
+            getResourceUrl("getJobs") +
+            "?branch=" +
+            encodeURIComponent(branch) +
+            "&commit=" +
+            encodeURIComponent(commit);
+
+        return $.when(getJobs(resourceUrl)).then(
+            function (jobs) {
+                allJobs = jobs;
+
+                /*
+                 * If exactly one job exists and it does not have any
+                 * parameters, trigger the build immediately.
+                 */
+                if (
+                    jobs.length === 1 &&
+                    (
+                        !jobs[0].buildParameters ||
+                        jobs[0].buildParameters.length === 0
+                    )
+                ) {
+                    var splitBranch = branch.split("/");
+
+                    // Remove "refs/heads" or "refs/tags".
+                    splitBranch.splice(0, 2);
+
+                    var branchName =
+                        splitBranch.join("/");
+
+                    var buildUrl =
+                        getResourceUrl(
+                            "triggerBuild/0/?branch="
+                        ) +
+                        encodeURIComponent(branchName);
+
+                    triggerBuild(buildUrl);
+
                     return false;
+                }
+
+                /*
+                 * Otherwise display the parameterized build dialog.
+                 */
+                var buildUrl =
+                    getResourceUrl("triggerBuild");
+
+                showManualBuildDialog(
+                    buildUrl,
+                    branch,
+                    jobs
+                );
+
+                return false;
+            },
+            function (error) {
+                console.error(
+                    "Failed to load Jenkins jobs:",
+                    error
+                );
+
+                flag({
+                    type: "error",
+                    body:
+                        "Could not load the available Jenkins jobs.",
+                    close: "auto"
                 });
-            };
-            
-            $buildTriggerButton.on('click', triggerBuildSetup);
-            $dropdownMenu.on('aui-dropdown2-hide', function() {
-                $buildTriggerButton.off('click', triggerBuildSetup);
-            });
-            return false;
-        });
+            }
+        );
+    }
+
+    /**
+     * Legacy integration for old AUI dropdown web-items.
+     *
+     * Keep this function while the plugin still has legacy branch actions.
+     */
+    function bindToDropdownLink(
+        linkSelector,
+        dropDownSelector,
+        getBranchNameFunction
+    ) {
+        $(document).on(
+            "aui-dropdown2-show",
+            dropDownSelector,
+            function () {
+                var $dropdownMenu = $(this);
+                var $buildTriggerButton =
+                    $(linkSelector);
+
+                var branchInfo =
+                    getBranchNameFunction(
+                        $dropdownMenu
+                    );
+
+                var branch = branchInfo[0];
+                var commit = branchInfo[1];
+
+                var triggerBuildSetup =
+                    function (event) {
+                        if (event) {
+                            event.preventDefault();
+                        }
+
+                        return openForRef(
+                            branch,
+                            commit
+                        );
+                    };
+
+                /*
+                 * Prevent duplicate click handlers if the dropdown is
+                 * opened repeatedly without the old handler being removed.
+                 */
+                $buildTriggerButton.off(
+                    "click.parameterized-builds"
+                );
+
+                $buildTriggerButton.on(
+                    "click.parameterized-builds",
+                    triggerBuildSetup
+                );
+
+                $dropdownMenu.one(
+                    "aui-dropdown2-hide",
+                    function () {
+                        $buildTriggerButton.off(
+                            "click.parameterized-builds",
+                            triggerBuildSetup
+                        );
+                    }
+                );
+
+                return false;
+            }
+        );
     }
     
     function getResourceUrl(resourceType){
         return urlParts[1] + '/rest/parameterized-builds/latest/projects/' + pageState.getProject().key + '/repos/'
         + pageState.getRepository().slug + '/' + resourceType;
     }
-    
+
+    function getEligibility() {
+        var hookUrl = getResourceUrl("getHookEnabled");
+        var jobsUrl = getResourceUrl("getJobs");
+
+        return $.when(
+            getJobs(jobsUrl),
+            getData(hookUrl)
+        ).then(function (jobsResponse, hookResponse) {
+            var jobs = jobsResponse[0] || [];
+            var hookEnabled = hookResponse[0] === true;
+
+            return {
+                enabled: hookEnabled && jobs.length > 0,
+                jobs: jobs
+            };
+        });
+    }
+
     function getJobs(resourceUrl){
         return server_utils.ajax({
           type: "GET",
@@ -211,5 +364,6 @@ define('trigger/build-dialog', [
         return "";
     }
 
+    exports.openForRef = openForRef;
     exports.bindToDropdownLink = bindToDropdownLink;
 });

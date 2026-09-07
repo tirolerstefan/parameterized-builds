@@ -40,6 +40,8 @@ import com.kylenicholls.stash.parameterizedbuilds.item.BitbucketVariables.Builde
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job.Trigger;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/projects/{projectKey}/repos/{repositorySlug}")
 @Consumes({ MediaType.APPLICATION_JSON })
@@ -237,6 +239,7 @@ public class BuildResource {
 
         for (Job job : settingsService.getJobs(settings.asMap())) {
             if (job.getTriggers().contains(Trigger.MANUAL)
+                    && matchesBranch(job, branch)
                     && permissionsCheck.checkPermissions(
                     job,
                     repository,
@@ -287,5 +290,31 @@ public class BuildResource {
             String projectKey,
             String repositorySlug) {
         return repositoryService.getBySlug(projectKey, repositorySlug);
+    }
+
+    private boolean matchesBranch(Job job, String branch) {
+        if (branch == null || branch.isEmpty()) {
+            return false;
+        }
+
+        String branchName = branch;
+
+        if (branchName.startsWith("refs/heads/")) {
+            branchName = branchName.substring("refs/heads/".length());
+        } else if (branchName.startsWith("refs/tags/")) {
+            branchName = branchName.substring("refs/tags/".length());
+        }
+
+        boolean isTag = branch.startsWith("refs/tags/");
+
+        if (job.getIsTag() != isTag) {
+            return false;
+        }
+
+        String branchRegex = job.getBranchRegex();
+
+        return branchRegex == null
+                || branchRegex.isEmpty()
+                || branchName.matches(branchRegex);
     }
 }

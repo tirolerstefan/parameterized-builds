@@ -1,16 +1,14 @@
 package com.kylenicholls.stash.parameterizedbuilds.ciserver;
 
-import com.atlassian.bitbucket.project.ProjectService;
-import com.atlassian.bitbucket.user.ApplicationUser;
-import com.kylenicholls.stash.parameterizedbuilds.item.UserToken;
-
-import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.atlassian.bitbucket.project.ProjectService;
+import com.atlassian.bitbucket.user.ApplicationUser;
+import com.kylenicholls.stash.parameterizedbuilds.item.UserToken;
 
 public class AccountServer extends CIServer {
 
@@ -18,11 +16,13 @@ public class AccountServer extends CIServer {
     private static final String USER_KEY = "user";
 
     private final transient ProjectService projectService;
-    private ApplicationUser user;
-    private Jenkins jenkins;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final ApplicationUser user;
+    private final Jenkins jenkins;
 
-    public AccountServer(Jenkins jenkins, ApplicationUser user, ProjectService projectService){
+    public AccountServer(
+            Jenkins jenkins,
+            ApplicationUser user,
+            ProjectService projectService) {
         this.jenkins = jenkins;
         this.user = user;
         this.projectService = projectService;
@@ -30,30 +30,25 @@ public class AccountServer extends CIServer {
         this.ADDITIONAL_JS = "jenkins-user-settings-form";
     }
 
-    public Map<String, Object> renderMap(Map<String, Object> renderOptions){
+    @Override
+    public Map<String, Object> renderMap(
+            Map<String, Object> renderOptions) {
+
         List<UserToken> projectTokens = jenkins
-                .getAllUserTokens(user, projectService.findAllKeys(), projectService);
+                .getAllUserTokens(
+                        user,
+                        projectService.findAllKeys(),
+                        projectService);
 
-        List<Map<String, Object>> tokenMaps = projectTokens.stream()
-                .map(UserToken::asMap)
-                .toList();
+        String projectTokensJson = projectTokens.stream()
+                .map(UserToken::toJson)
+                .collect(Collectors.joining(",", "[", "]"));
 
-        final String projectTokensJson;
+        Map<String, Object> baseMap = new LinkedHashMap<>();
+        baseMap.put(USER_KEY, user);
+        baseMap.put(PROJECT_TOKENS_KEY, projectTokensJson);
+        baseMap.putAll(renderOptions);
 
-        try {
-            projectTokensJson = OBJECT_MAPPER.writeValueAsString(tokenMaps);
-        } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Unable to serialize Jenkins project tokens",
-                    e);
-        }
-
-        @SuppressWarnings("serial")
-        Map<String, Object> baseMap = new LinkedHashMap<String, Object>() {{
-            put(USER_KEY, user);
-            put(PROJECT_TOKENS_KEY, projectTokensJson);
-            putAll(renderOptions);
-        }};
         return Collections.unmodifiableMap(baseMap);
     }
 }
