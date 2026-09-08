@@ -103,11 +103,21 @@ public class JobTest {
     }
 
     @Test
-    public void testBuildJobInvalidTrigger() {
-        Job actual = new Job.JobBuilder(1).triggers("".split(";")).build();
+    public void testBuildJobBlankTriggerIsIgnored() {
+        Job actual = new Job.JobBuilder(1)
+                .triggers(new String[] { "" })
+                .build();
 
-        assertEquals(1, actual.getTriggers().size());
-        assertEquals(Trigger.NULL, actual.getTriggers().get(0));
+        assertEquals(0, actual.getTriggers().size());
+    }
+
+    @Test
+    public void testBuildJobUnknownTriggerIsIgnored() {
+        Job actual = new Job.JobBuilder(1)
+                .triggers(new String[] { "NOT_A_TRIGGER" })
+                .build();
+
+        assertTrue(actual.getTriggers().isEmpty());
     }
 
     @Test

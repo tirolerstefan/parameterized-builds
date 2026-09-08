@@ -8,12 +8,13 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -28,8 +29,6 @@ import com.atlassian.soy.renderer.SoyTemplateRenderer;
 import com.atlassian.webresource.api.assembler.PageBuilderService;
 import com.atlassian.webresource.api.assembler.RequiredResources;
 import com.atlassian.webresource.api.assembler.WebResourceAssembler;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
 import com.kylenicholls.stash.parameterizedbuilds.item.UserToken;
 
@@ -89,12 +88,13 @@ public class CIServletTest {
     public void testDoGetGlobalServer() throws ServletException, IOException, SoyException {
         when(req.getPathInfo()).thenReturn(GLOBAL_PATH);
         Server server = new Server("baseurl", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(null)).thenReturn(servers);
         servlet.doGet(req, resp);
 
-        Map<String, Object> data = ImmutableMap.of(
-                CONTEXT_KEY, BITBUCKET_CONTEXT);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put(CONTEXT_KEY, BITBUCKET_CONTEXT);
+
         verify(renderer, times(1))
                 .render(resp.getWriter(), SOY_TEMPLATE, "jenkins.admin.settings", data);
     }
@@ -102,11 +102,12 @@ public class CIServletTest {
     @Test
     public void testDoGetGlobalServerNull() throws ServletException, IOException, SoyException {
         when(req.getPathInfo()).thenReturn(GLOBAL_PATH);
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         servlet.doGet(req, resp);
 
-        Map<String, Object> data = ImmutableMap.of(
-                CONTEXT_KEY, BITBUCKET_CONTEXT);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put(CONTEXT_KEY, BITBUCKET_CONTEXT);
+
         verify(renderer, times(1))
                 .render(resp.getWriter(), SOY_TEMPLATE, "jenkins.admin.settings", data);
     }
@@ -115,16 +116,16 @@ public class CIServletTest {
     public void testDoGetAccountServerNull() throws ServletException, IOException, SoyException {
         List<UserToken> projectTokens = new ArrayList<>();
         when(req.getPathInfo()).thenReturn(ACCOUNT_PATH);
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         when(jenkins.getAllUserTokens(user, new ArrayList<String>(), projectService))
                 .thenReturn(projectTokens);
         servlet.doGet(req, resp);
 
-        Map<String, Object> data = ImmutableMap
-                .<String, Object> of(
-                    "user", user,
-                    "projectTokens", "[]",
-                    CONTEXT_KEY, BITBUCKET_CONTEXT);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("user", user);
+        data.put("projectTokens", "[]");
+        data.put(CONTEXT_KEY, BITBUCKET_CONTEXT);
+
         verify(renderer, times(1))
                 .render(resp.getWriter(), SOY_TEMPLATE, "jenkins.user.settings", data);
     }
@@ -133,13 +134,14 @@ public class CIServletTest {
     public void testDoGetProjectServer() throws ServletException, IOException, SoyException {
         when(req.getPathInfo()).thenReturn(PROJECT_PATH + PROJECT_KEY);
         Server server = new Server("baseurl", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(PROJECT_KEY)).thenReturn(servers);
         servlet.doGet(req, resp);
 
-        Map<String, Object> data = ImmutableMap.of(
-                ProjectServer.PROJECT_KEY, PROJECT_KEY,
-                CONTEXT_KEY, BITBUCKET_CONTEXT);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put(ProjectServer.PROJECT_KEY, PROJECT_KEY);
+        data.put(CONTEXT_KEY, BITBUCKET_CONTEXT);
+
         verify(renderer, times(1))
                 .render(resp.getWriter(), SOY_TEMPLATE, "jenkins.admin.settingsProjectAdmin", data);
     }
@@ -147,12 +149,13 @@ public class CIServletTest {
     @Test
     public void testDoGetProjectServerNull() throws ServletException, IOException, SoyException {
         when(req.getPathInfo()).thenReturn(PROJECT_PATH + PROJECT_KEY);
-        when(jenkins.getJenkinsServers(PROJECT_KEY)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(PROJECT_KEY)).thenReturn(new ArrayList<>());
         servlet.doGet(req, resp);
 
-        Map<String, Object> data = ImmutableMap.of(
-                ProjectServer.PROJECT_KEY, PROJECT_KEY,
-                CONTEXT_KEY, BITBUCKET_CONTEXT);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put(ProjectServer.PROJECT_KEY, PROJECT_KEY);
+        data.put(CONTEXT_KEY, BITBUCKET_CONTEXT);
+
         verify(renderer, times(1))
                 .render(resp.getWriter(), SOY_TEMPLATE, "jenkins.admin.settingsProjectAdmin", data);
     }

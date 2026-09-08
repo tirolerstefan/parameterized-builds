@@ -21,14 +21,15 @@ import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PROpenedHandler;
 import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PRReopenedHandler;
 import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PRSourceRescopedHandler;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
-import com.atlassian.bitbucket.branch.automerge.AutomaticMergeEvent;
+import com.atlassian.bitbucket.branch.cascadingmerge.CascadingMergeEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestDeclinedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestDeletedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestMergedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestOpenedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestParticipantApprovedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestReopenedEvent;
 import com.atlassian.bitbucket.event.pull.PullRequestRescopedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullRequestHook {
     private final SettingsService settingsService;
@@ -36,6 +37,7 @@ public class PullRequestHook {
     private final Jenkins jenkins;
     private final String url;
     private final ExecutorService executorService;
+    private static final Logger logger = LoggerFactory.getLogger(PullRequestHook.class);
 
     public PullRequestHook(
             SettingsService settingsService,
@@ -59,6 +61,9 @@ public class PullRequestHook {
 
     @EventListener
     public void onPullRequestReOpened(PullRequestReopenedEvent event) throws IOException {
+        logger.info(
+                "Received PullRequestReopenedEvent: pullRequest={}",
+                event.getPullRequest());
         runHandler(new PRReopenedHandler(settingsService, pullRequestService, jenkins, event, url));
     }
 
@@ -78,20 +83,25 @@ public class PullRequestHook {
     }
 
     @EventListener
-    public void onPullRequestMerged(PullRequestMergedEvent event) throws IOException {
-        runHandler(new PRMergedHandler(settingsService, pullRequestService, jenkins, event, url));
-    }
-
-    @EventListener
-    public void onPullRequestAutomaticMerged(AutomaticMergeEvent event) throws IOException {
+    public void onPullRequestCascadingMerged(CascadingMergeEvent event)
+            throws IOException {
         Iterable<Branch> branches = event.getMergePath();
-        for (Branch branch : branches){
-            runHandler(new PRAutoMergedHandler(settingsService, jenkins, event, url, branch));
+
+        for (Branch branch : branches) {
+            runHandler(new PRAutoMergedHandler(
+                    settingsService,
+                    jenkins,
+                    event,
+                    url,
+                    branch));
         }
     }
 
     @EventListener
     public void onPullRequestDeclined(PullRequestDeclinedEvent event) throws IOException {
+        logger.info(
+                "Received PullRequestDeclinedEvent: pullRequest={}",
+                event.getPullRequest());
         runHandler(new PRDeclinedHandler(settingsService, pullRequestService, jenkins, event, url));
     }
 
@@ -107,6 +117,27 @@ public class PullRequestHook {
     }
 
     protected void runHandler(BaseHandler handler) {
-        this.executorService.submit(() -> handler.run());
+        logger.debug(
+                "Submitting handler: {}",
+                handler.getClass().getName());
+
+        executorService.submit(() -> {
+            try {
+                logger.debug(
+                        "Starting handler: {}",
+                        handler.getClass().getName());
+
+                handler.run();
+
+                logger.debug(
+                        "Completed handler: {}",
+                        handler.getClass().getName());
+            } catch (Exception e) {
+                logger.error(
+                        "Handler failed: {}",
+                        handler.getClass().getName(),
+                        e);
+            }
+        });
     }
 }

@@ -1,12 +1,13 @@
 package com.kylenicholls.stash.parameterizedbuilds.ciserver;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,6 @@ import com.atlassian.bitbucket.project.ProjectService;
 import com.atlassian.soy.renderer.SoyException;
 import com.atlassian.soy.renderer.SoyTemplateRenderer;
 import com.atlassian.webresource.api.assembler.PageBuilderService;
-import com.google.common.collect.ImmutableMap;
 
 @SuppressWarnings("serial")
 public class CIServlet extends HttpServlet {
@@ -69,11 +69,12 @@ public class CIServlet extends HttpServlet {
 
         String baseUrl = navBuilder.buildRelative();
 
-        Map<String, Object> renderData = ImmutableMap.<String, Object>builder()
-                .putAll(data)
-                .put("bitbucketContext", baseUrl)
-                .build();
-        
+        Map<String, Object> renderData = new LinkedHashMap<>();
+        if (data != null) {
+            renderData.putAll(data);
+        }
+        renderData.put("bitbucketContext", baseUrl);
+
         resp.setContentType("text/html;charset=UTF-8");
         try {
             soyTemplateRenderer.render(resp

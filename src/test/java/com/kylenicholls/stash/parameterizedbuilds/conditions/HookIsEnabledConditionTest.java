@@ -16,7 +16,7 @@ import com.atlassian.bitbucket.hook.repository.RepositoryHook;
 import com.atlassian.bitbucket.repository.Repository;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class HookIsEnabledConditionTest {
     private RepositoryHook repoHook;

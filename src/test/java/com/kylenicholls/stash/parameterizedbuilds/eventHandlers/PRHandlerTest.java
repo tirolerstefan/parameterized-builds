@@ -121,7 +121,7 @@ public class PRHandlerTest {
 
     @Test
     public void testHookIsDisabled() throws IOException {
-        Job job = jobBuilder.triggers(new String[] { "PULLREQUEST" }).build();
+        Job job = jobBuilder.triggers(new String[] { "PRMERGED" }).build();
         jobs.add(job);
         when(repoHook.isEnabled()).thenReturn(false);
         PullRequestDeclinedEvent declinedEvent = eventFactory.getMockedDeclinedEvent(repository);

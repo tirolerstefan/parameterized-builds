@@ -1,14 +1,8 @@
 package com.kylenicholls.stash.parameterizedbuilds.eventHandlers;
 
-import com.atlassian.bitbucket.branch.automerge.AutomaticMergeEvent;
 import com.atlassian.bitbucket.commit.MinimalCommit;
-import com.atlassian.bitbucket.event.pull.PullRequestDeclinedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestDeletedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestMergedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestOpenedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestParticipantApprovedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestReopenedEvent;
-import com.atlassian.bitbucket.event.pull.PullRequestRescopedEvent;
+import com.atlassian.bitbucket.event.pull.*;
+import com.atlassian.bitbucket.branch.cascadingmerge.CascadingMergeEvent;
 import com.atlassian.bitbucket.pull.PullRequest;
 import com.atlassian.bitbucket.pull.PullRequestParticipant;
 import com.atlassian.bitbucket.pull.PullRequestRef;
@@ -23,9 +17,9 @@ public class TestEventFactory {
     private PullRequestReopenedEvent reopenedEvent;
     private PullRequestRescopedEvent rescopedEvent;
     private PullRequestMergedEvent mergedEvent;
+    private CascadingMergeEvent autoMergeEvent;
     private PullRequestDeclinedEvent declinedEvent;
     private PullRequestDeletedEvent deletedEvent;
-    private AutomaticMergeEvent autoMergeEvent;
     private PullRequestParticipantApprovedEvent approvedEvent;
 
     public void setup(Repository repository){
@@ -39,7 +33,7 @@ public class TestEventFactory {
         reopenedEvent = mock(PullRequestReopenedEvent.class);
         rescopedEvent = mock(PullRequestRescopedEvent.class);
         mergedEvent = mock(PullRequestMergedEvent.class);
-        autoMergeEvent = mock(AutomaticMergeEvent.class);
+        autoMergeEvent = mock(CascadingMergeEvent.class);
         declinedEvent = mock(PullRequestDeclinedEvent.class);
         deletedEvent = mock(PullRequestDeletedEvent.class);
         approvedEvent = mock(PullRequestParticipantApprovedEvent.class);
@@ -54,9 +48,10 @@ public class TestEventFactory {
         when(openedEvent.getPullRequest()).thenReturn(pullRequest);
         when(reopenedEvent.getPullRequest()).thenReturn(pullRequest);
         when(rescopedEvent.getPullRequest()).thenReturn(pullRequest);
-        when(mergedEvent.getPullRequest()).thenReturn(pullRequest);
-        when(mergedEvent.getCommit()).thenReturn(mergeCommit);
         when(autoMergeEvent.getRepository()).thenReturn(repository);
+        when(mergedEvent.getPullRequest()).thenReturn(pullRequest);
+        when(mergedEvent.isAutoMerge()).thenReturn(true);
+        when(mergedEvent.getCommit()).thenReturn(mergeCommit);
         when(declinedEvent.getPullRequest()).thenReturn(pullRequest);
         when(deletedEvent.getPullRequest()).thenReturn(pullRequest);
         when(approvedEvent.getPullRequest()).thenReturn(pullRequest);
@@ -108,8 +103,7 @@ public class TestEventFactory {
         setup(repository);
         return approvedEvent;
     }
-
-    public AutomaticMergeEvent getMockedAutoMergeEvent(Repository repository){
+    public CascadingMergeEvent getMockedAutoMergeEvent(Repository repository) {
         setup(repository);
         return autoMergeEvent;
     }

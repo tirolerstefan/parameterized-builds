@@ -20,7 +20,7 @@ import com.atlassian.bitbucket.setting.Settings;
 import com.kylenicholls.stash.parameterizedbuilds.helper.SettingsService;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ManualButtonConditionTest {
     private Map<String, Object> context;

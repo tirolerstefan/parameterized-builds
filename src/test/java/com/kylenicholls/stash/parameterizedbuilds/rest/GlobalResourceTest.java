@@ -8,11 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -23,13 +20,13 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.atlassian.bitbucket.auth.AuthenticationContext;
-import com.atlassian.bitbucket.i18n.I18nService;
 import com.atlassian.bitbucket.user.ApplicationUser;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.JenkinsConnection;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,11 +51,10 @@ public class GlobalResourceTest {
     public void setup() throws Exception {
         globalServer = new Server("http://globalurl", "global server", "globaluser", "globaltoken",
                 false, false);
-        globalServers = Lists.newArrayList(globalServer);
-        I18nService i18nService = mock(I18nService.class);
+        globalServers = new ArrayList<>(List.of(globalServer));
         jenkins = mock(Jenkins.class);
         authContext = mock(AuthenticationContext.class);
-        rest = new GlobalResource(i18nService, jenkins, authContext);
+        rest = new GlobalResource(jenkins, authContext);
         ui = mock(UriInfo.class);
         testToken = new ServerService.Token();
         testToken.setToken(TOKEN_VALUE);
@@ -76,15 +72,15 @@ public class GlobalResourceTest {
     
     @Test
     public void testGetServersEmpty(){
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         Response actual = rest.getServers(ui);
 
-        assertEquals(Lists.newArrayList(), actual.getEntity());
+        assertEquals(new ArrayList<>(), actual.getEntity());
     }
 
     @Test
     public void testGetServersOkStatus(){
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         Response actual = rest.getServers(ui);
 
         assertEquals(Response.Status.OK.getStatusCode(), actual.getStatus());
@@ -97,7 +93,7 @@ public class GlobalResourceTest {
 
         Map<String, Object> expected = rest.createServerMap(globalServer, null);
 
-        assertEquals(Lists.newArrayList(expected), actual.getEntity());
+        assertEquals(new ArrayList<>(List.of(expected)), actual.getEntity());
     }
 
     @Test
@@ -231,10 +227,13 @@ public class GlobalResourceTest {
         when(jenkins.getJenkinsServer(isNull(), any())).thenReturn(null);
         Response actual = rest.addServer(ui, globalServer, globalServer.getAlias());
 
-        String response = actual.getEntity().toString();
-        List<String> errors = (List<String>) new Gson().fromJson(response, Map.class).get("errors");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) actual.getEntity();
 
-        assertEquals(Lists.newArrayList("Base Url required."), errors);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) response.get("errors");
+
+        assertEquals(new ArrayList<>(List.of("Base Url required.")), errors);
     }
 
     @Test
@@ -253,10 +252,14 @@ public class GlobalResourceTest {
         when(jenkins.getJenkinsServer(isNull(), any())).thenReturn(null);
         Response actual = rest.addServer(ui, globalServer, globalServer.getAlias());
 
-        String response = actual.getEntity().toString();
-        List<String> errors = (List<String>) new Gson().fromJson(response, Map.class).get("errors");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) actual.getEntity();
 
-        assertEquals(Lists.newArrayList("Invalide Base Url."), errors);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) response.get("errors");
+
+
+        assertEquals(new ArrayList<>(List.of("Invalide Base Url.")), errors);
     }
 
     @Test
@@ -267,10 +270,13 @@ public class GlobalResourceTest {
         when(jenkins.getJenkinsServer(isNull(), any())).thenReturn(null);
         Response actual = rest.addServer(ui, globalServer, globalServer.getAlias());
 
-        String response = actual.getEntity().toString();
-        List<String> errors = (List<String>) new Gson().fromJson(response, Map.class).get("errors");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) actual.getEntity();
 
-        assertEquals(Lists.newArrayList("Base Url required.", "Alias required."), errors);
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) response.get("errors");
+
+        assertEquals(new ArrayList<>(List.of("Base Url required.", "Alias required.")), errors);
     }
 
     @Test

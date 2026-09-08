@@ -10,7 +10,6 @@ import com.atlassian.bitbucket.project.ProjectService;
 import com.atlassian.bitbucket.user.ApplicationUser;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
-import com.google.common.collect.Lists;
 import com.kylenicholls.stash.parameterizedbuilds.item.Server;
 import com.kylenicholls.stash.parameterizedbuilds.item.UserToken;
 
@@ -157,7 +156,7 @@ public class Jenkins {
         List<Server> servers = new ArrayList<>();
         if (projectKey == null || projectKey.equals("global-settings")) {
             Server server = getJenkinsServer();
-            return server == null ? Lists.newArrayList() : Lists.newArrayList(server);
+            return server == null ? new ArrayList<>() : new ArrayList<>(List.of(server));
         }
 
         Object settingObj = pluginSettings.get(JENKINS_SETTINGS_PROJECT + projectKey);
@@ -217,7 +216,7 @@ public class Jenkins {
     protected List<UserToken> getAllUserTokens(ApplicationUser user, List<String> projectKeys,
             ProjectService projectService) {
         List<UserToken> userTokens = new ArrayList<>();
-        List<String> allKeys = Lists.newArrayList(projectKeys);
+        List<String> allKeys = new ArrayList<>(projectKeys);
         allKeys.add(null);
 
         for (String projectKey : allKeys) {

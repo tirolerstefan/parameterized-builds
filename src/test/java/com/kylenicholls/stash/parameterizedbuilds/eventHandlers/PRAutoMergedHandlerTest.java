@@ -1,6 +1,6 @@
 package com.kylenicholls.stash.parameterizedbuilds.eventHandlers;
 
-import com.atlassian.bitbucket.branch.automerge.AutomaticMergeEvent;
+import com.atlassian.bitbucket.branch.cascadingmerge.CascadingMergeEvent;
 import com.atlassian.bitbucket.repository.Branch;
 import com.kylenicholls.stash.parameterizedbuilds.item.Job;
 import org.junit.Test;
@@ -18,17 +18,31 @@ import static org.mockito.Mockito.verify;
 public class PRAutoMergedHandlerTest extends PRTestBase {
 
     @Test
-    public void testPRAutoMergedAndTriggerIsPRAUTOMERGED() throws IOException{
-        Job job = jobBuilder.triggers(new String[] { "PRAUTOMERGED" }).build();
+    public void testPRAutoMergedAndTriggerIsPRAUTOMERGED() throws IOException {
+        Job job = jobBuilder
+                .triggers(new String[] {"PRAUTOMERGED"})
+                .build();
+
         jobs.add(job);
-        AutomaticMergeEvent automaticMergeEvent = eventFactory.getMockedAutoMergeEvent(repository);
+
+        CascadingMergeEvent cascadingMergeEvent = eventFactory.getMockedAutoMergeEvent(repository);
         Branch branch = mock(Branch.class);
-        PRAutoMergedHandler handler = new PRAutoMergedHandler(settingsService, jenkins,
-                automaticMergeEvent, PR_URL, branch);
+        PRAutoMergedHandler handler = new PRAutoMergedHandler(
+                settingsService,
+                jenkins,
+                cascadingMergeEvent,
+                PR_URL,
+                branch);
+
         PRAutoMergedHandler spyHandler = spy(handler);
-        doNothing().when(spyHandler).triggerJenkins(any(), any());
+
+        doNothing()
+                .when(spyHandler)
+                .triggerJenkins(any(), any());
+
         spyHandler.run();
 
-        verify(spyHandler, times(1)).triggerJenkins(eq(job), any());
+        verify(spyHandler, times(1))
+                .triggerJenkins(eq(job), any());
     }
 }

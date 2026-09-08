@@ -13,7 +13,6 @@ import com.atlassian.bitbucket.server.ApplicationPropertiesService;
 import com.atlassian.bitbucket.setting.Settings;
 import com.atlassian.bitbucket.setting.SettingsValidationErrors;
 import com.atlassian.bitbucket.user.ApplicationUser;
-import com.google.common.collect.Lists;
 import com.kylenicholls.stash.parameterizedbuilds.ciserver.Jenkins;
 import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.PushHandler;
 import com.kylenicholls.stash.parameterizedbuilds.eventHandlers.RefCreatedHandler;
@@ -48,10 +47,10 @@ public class ParameterizedBuildHookTest {
     private final String URI = "http://uri";
     private final Server globalServer = new Server("globalurl", null, "globaluser", "globaltoken", 
             false, false);
-    private final List<Server> globalServers = Lists.newArrayList(globalServer);
+    private final List<Server> globalServers = new ArrayList<>(List.of(globalServer));
     private final Server projectServer = new Server("projecturl", null, "projectuser", 
             "projecttoken", false, false);
-    private final List<Server> projectServers = Lists.newArrayList(projectServer);
+    private final List<Server> projectServers = new ArrayList<>(List.of(projectServer));
     private RepositoryHookRequest request;
     private Settings settings;
     private RefChange refChange;
@@ -137,8 +136,8 @@ public class ParameterizedBuildHookTest {
 
     @Test
     public void testShowErrorIfJenkinsSettingsNull() {
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
-        when(jenkins.getJenkinsServers(project.getKey())).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
+        when(jenkins.getJenkinsServers(project.getKey())).thenReturn(new ArrayList<>());
         buildHook.validate(settings, validationErrors, repositoryScope);
 
         verify(validationErrors, times(1))
@@ -148,7 +147,7 @@ public class ParameterizedBuildHookTest {
     @Test
     public void testShowErrorIfBaseUrlEmpty() {
         Server server = new Server("", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(null)).thenReturn(servers);
         when(jenkins.getJenkinsServers(project.getKey())).thenReturn(servers);
         buildHook.validate(settings, validationErrors, repositoryScope);
@@ -160,9 +159,9 @@ public class ParameterizedBuildHookTest {
     @Test
     public void testShowErrorIfJenkinsSettingsUrlEmpty() {
         Server server = new Server("", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(null)).thenReturn(servers);
-        when(jenkins.getJenkinsServers(project.getKey())).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(project.getKey())).thenReturn(new ArrayList<>());
         buildHook.validate(settings, validationErrors, repositoryScope);
 
         verify(validationErrors, times(1))
@@ -171,9 +170,9 @@ public class ParameterizedBuildHookTest {
 
     @Test
     public void testShowErrorIfProjectSettingsUrlEmpty() {
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         Server server = new Server("", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(project.getKey())).thenReturn(servers);
         buildHook.validate(settings, validationErrors, repositoryScope);
 
@@ -183,9 +182,9 @@ public class ParameterizedBuildHookTest {
 
     @Test
     public void testNoErrorIfOnlyJenkinsSettingsNull() {
-        when(jenkins.getJenkinsServers(null)).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(null)).thenReturn(new ArrayList<>());
         Server server = new Server("baseurl", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(project.getKey())).thenReturn(servers);
         buildHook.validate(settings, validationErrors, repositoryScope);
 
@@ -195,9 +194,9 @@ public class ParameterizedBuildHookTest {
     @Test
     public void testNoErrorIfOnlyProjectSettingsNull() {
         Server server = new Server("baseurl", null, null, null, false, false);
-        List<Server> servers = Lists.newArrayList(server);
+        List<Server> servers = new ArrayList<>(List.of(server));
         when(jenkins.getJenkinsServers(null)).thenReturn(servers);
-        when(jenkins.getJenkinsServers(project.getKey())).thenReturn(Lists.newArrayList());
+        when(jenkins.getJenkinsServers(project.getKey())).thenReturn(new ArrayList<>());
         buildHook.validate(settings, validationErrors, repositoryScope);
 
         verify(validationErrors, times(0)).addFieldError(any(), any());
@@ -230,14 +229,26 @@ public class ParameterizedBuildHookTest {
 
     @Test
     public void testShowErrorIfTriggersEmpty() {
-        Job job = new Job.JobBuilder(1).jobName("name").jenkinsServer("test")
-                .triggers("".split(";")).buildParameters("").branchRegex("").pathRegex("")
-                .ignoreComitters("").ignoreCommitMsg("").build();
+        Job job = new Job.JobBuilder(1)
+                .jobName("name")
+                .jenkinsServer("test")
+                .triggers(new String[0])
+                .buildParameters("")
+                .branchRegex("")
+                .pathRegex("")
+                .ignoreComitters("")
+                .ignoreCommitMsg("")
+                .build();
+
+        Assert.assertTrue(job.getTriggers().isEmpty());
+
         jobs.add(job);
+
         buildHook.validate(settings, validationErrors, repositoryScope);
 
-        verify(validationErrors, times(1)).addFieldError(SettingsService.TRIGGER_PREFIX
-                + "0", "You must choose at least one trigger");
+        verify(validationErrors, times(1)).addFieldError(
+                SettingsService.TRIGGER_PREFIX + "0",
+                "You must choose at least one trigger");
     }
 
     @Test

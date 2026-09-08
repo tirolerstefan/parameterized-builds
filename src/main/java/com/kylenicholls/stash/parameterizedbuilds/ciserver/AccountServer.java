@@ -1,15 +1,14 @@
 package com.kylenicholls.stash.parameterizedbuilds.ciserver;
 
-import com.atlassian.bitbucket.project.ProjectService;
-import com.atlassian.bitbucket.user.ApplicationUser;
-import com.google.common.collect.ImmutableMap;
-import com.kylenicholls.stash.parameterizedbuilds.item.UserToken;
-
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import com.google.gson.JsonArray;
+import com.atlassian.bitbucket.project.ProjectService;
+import com.atlassian.bitbucket.user.ApplicationUser;
+import com.kylenicholls.stash.parameterizedbuilds.item.UserToken;
 
 public class AccountServer extends CIServer {
 
@@ -17,10 +16,13 @@ public class AccountServer extends CIServer {
     private static final String USER_KEY = "user";
 
     private final transient ProjectService projectService;
-    private ApplicationUser user;
-    private Jenkins jenkins;
+    private final ApplicationUser user;
+    private final Jenkins jenkins;
 
-    public AccountServer(Jenkins jenkins, ApplicationUser user, ProjectService projectService){
+    public AccountServer(
+            Jenkins jenkins,
+            ApplicationUser user,
+            ProjectService projectService) {
         this.jenkins = jenkins;
         this.user = user;
         this.projectService = projectService;
@@ -28,21 +30,25 @@ public class AccountServer extends CIServer {
         this.ADDITIONAL_JS = "jenkins-user-settings-form";
     }
 
-    public ImmutableMap<String, Object> renderMap(Map<String, Object> renderOptions){
-        List<UserToken> projectTokens = jenkins
-                .getAllUserTokens(user, projectService.findAllKeys(), projectService);
+    @Override
+    public Map<String, Object> renderMap(
+            Map<String, Object> renderOptions) {
 
-        JsonArray tokenArray = new JsonArray();
-        projectTokens.stream()
+        List<UserToken> projectTokens = jenkins
+                .getAllUserTokens(
+                        user,
+                        projectService.findAllKeys(),
+                        projectService);
+
+        String projectTokensJson = projectTokens.stream()
                 .map(UserToken::toJson)
-                .forEach(tokenArray::add);
-        
-        @SuppressWarnings("serial")
-        Map<String, Object> baseMap = new HashMap<String, Object>() {{
-            put(USER_KEY, user);
-            put(PROJECT_TOKENS_KEY, tokenArray.toString());
-            putAll(renderOptions);
-        }};
-        return ImmutableMap.copyOf(baseMap);
+                .collect(Collectors.joining(",", "[", "]"));
+
+        Map<String, Object> baseMap = new LinkedHashMap<>();
+        baseMap.put(USER_KEY, user);
+        baseMap.put(PROJECT_TOKENS_KEY, projectTokensJson);
+        baseMap.putAll(renderOptions);
+
+        return Collections.unmodifiableMap(baseMap);
     }
 }
